@@ -1,0 +1,192 @@
+"""
+This script creates a simple math game using Tkinter.
+It includes a login screen and a game screen with different difficulty levels.
+"""
+
+import tkinter as tk
+from tkinter import messagebox
+import random
+
+# Setup Tkinter window
+root = tk.Tk()
+root.title("Math Game")
+
+# Load the image to get its dimensions
+image = tk.PhotoImage(file="Maths.png")
+image_width = image.width()
+image_height = image.height()
+
+# Set window size based on image size with less extra space
+window_width = image_width + 200
+window_height = image_height + 50
+root.geometry(f"{window_width}x{window_height}")
+root.config(bg="#2b2d42")  # Set background color
+
+# Initialize score variable
+score = 0
+
+def validate_login():
+    """
+    Validate the username and password entered by the user.
+    If valid, transition to the game screen.
+    """
+    username = entry_username.get()
+    password = entry_password.get()
+
+    if username == "user" and password == "pass":
+        login_frame.pack_forget()  # Hide login frame
+        game_frame.pack(pady=20)   # Show game frame
+    else:
+        messagebox.showerror("Login Error", "Invalid username or password.")
+
+def generate_problem(difficulty):
+    """
+    Generate a math problem and its correct answer based on the selected difficulty level.
+    """
+    operations = {
+        'Easy': ('+', lambda: (random.randint(1, 10), random.randint(1, 10))),
+        'Medium': (
+            random.choice(['-', '*']),
+            lambda: (random.randint(1, 20), random.randint(1, 10))
+        ),
+        'Hard': (
+            random.choice(['/', '*']),
+            lambda: (random.randint(1, 50), random.randint(1, 20))
+        )
+
+    op, operands = operations[difficulty]
+    num1, num2 = operands()
+
+    if op == '/':
+        while num2 == 0:  # Avoid division by zero
+            num2 = random.randint(1, 20)
+
+    problem = f"{num1} {op} {num2}"
+    answer = eval(problem)
+
+    return problem, answer
+
+def start_game():
+    """
+    Start a new game by generating a math problem and displaying it.
+    """
+    difficulty = difficulty_var.get()
+    problem, answer = generate_problem(difficulty)
+    problem_label.config(text=problem)
+    global correct_answer
+    correct_answer = answer
+
+def check_answer():
+    """
+    Check the user's answer against the correct answer, update the score, 
+    and either continue the game or end it if the score reaches 10.
+    """
+    global score
+    try:
+        user_answer = int(entry_answer.get())
+        if user_answer == correct_answer:
+            score += 1
+            messagebox.showinfo("Correct!", "Well done! Your answer is correct.")
+        else:
+            messagebox.showerror("Incorrect", f"Sorry, the correct answer was {correct_answer}.")
+        update_score()
+        save_score()
+        entry_answer.delete(0, tk.END)  # Clear the answer entry
+        
+        if score >= 10:
+            end_game()  # End the game if the score reaches 10
+        else:
+            start_game()  # Start a new game after each attempt
+    except ValueError:
+        messagebox.showerror("Input Error", "Please enter a valid number.")
+
+def update_score():
+    """
+    Update the score label to reflect the current score.
+    """
+    score_label.config(text=f"Score: {score}")
+
+def save_score():
+    """
+    Save the current score to a file.
+    """
+    with open("scores.txt", "a") as file:
+        file.write(f"Score: {score}\n")
+
+def end_game():
+    """
+    Display a message indicating the game is over and disable further input.
+    """
+    messagebox.showinfo("Game Over", "Congratulations! You've reached a score of 10!")
+    problem_label.config(text="Game Over")
+    check_button.config(state=tk.DISABLED)
+    entry_answer.config(state=tk.DISABLED)
+
+# Create login frame
+login_frame = tk.Frame(root, bg="#2b2d42")
+login_frame.pack(pady=20, padx=20, fill='both', expand=True)
+
+# Load and display the image
+image_label = tk.Label(login_frame, image=image, bg="#2b2d42")
+image_label.grid(row=0, column=0, rowspan=3, padx=10, pady=10)
+
+# Username and password labels and entries
+label_username = tk.Label(login_frame, text="Username:", bg="#2b2d42", fg="#edf2f4")
+label_username.grid(row=0, column=1, pady=5, sticky='e')
+entry_username = tk.Entry(login_frame, bg="#edf2f4", fg="#2b2d42")
+entry_username.grid(row=0, column=2, pady=5, sticky='w')
+
+label_password = tk.Label(login_frame, text="Password:", bg="#2b2d42", fg="#edf2f4")
+label_password.grid(row=1, column=1, pady=5, sticky='e')
+entry_password = tk.Entry(login_frame, show='*', bg="#edf2f4", fg="#2b2d42")
+entry_password.grid(row=1, column=2, pady=5, sticky='w')
+
+# Login button
+login_button = tk.Button(
+    login_frame, text="Login", command=validate_login, bg="#ef233c", fg="#edf2f4"
+)
+login_button.grid(row=2, column=1, columnspan=2, pady=20)
+
+# Create game frame
+game_frame = tk.Frame(root, bg="#2b2d42")
+
+difficulty_var = tk.StringVar(value="Easy")
+
+tk.Label(game_frame, text="Choose difficulty:", bg="#2b2d42", fg="#edf2f4").pack(pady=10)
+
+tk.Radiobutton(
+    game_frame, text="Easy", variable=difficulty_var, value="Easy",
+    bg="#2b2d42", fg="#edf2f4", selectcolor="#ef233c"
+).pack(anchor='w')
+
+tk.Radiobutton(
+    game_frame, text="Medium", variable=difficulty_var, value="Medium",
+    bg="#2b2d42", fg="#edf2f4", selectcolor="#ef233c"
+).pack(anchor='w')
+
+tk.Radiobutton(
+    game_frame, text="Hard", variable=difficulty_var, value="Hard",
+    bg="#2b2d42", fg="#edf2f4", selectcolor="#ef233c"
+).pack(anchor='w')
+
+tk.Button(
+    game_frame, text="Start Game", command=start_game, bg="#ef233c", fg="#edf2f4"
+).pack(pady=10)
+
+problem_label = tk.Label(game_frame, text="", font=('Arial', 16), bg="#2b2d42", fg="#edf2f4")
+problem_label.pack(pady=10)
+
+entry_answer = tk.Entry(game_frame, font=('Arial', 16), bg="#edf2f4", fg="#2b2d42")
+entry_answer.pack(pady=5)
+
+check_button = tk.Button(
+    game_frame, text="Check Answer", command=check_answer, font=('Arial', 14), bg="#ef233c", fg="#edf2f4"
+)
+check_button.pack(pady=10)
+
+# Display score
+score_label = tk.Label(game_frame, text="Score: 0", font=('Arial', 16), bg="#2b2d42", fg="#edf2f4")
+score_label.pack(pady=10)
+
+# Start the GUI
+root.mainloop()
