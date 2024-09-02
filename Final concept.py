@@ -1,3 +1,6 @@
+# 3PAD Maths quiz
+# Date 1/08/2024
+# Author: Alvin Shi
 import tkinter as tk  # Import the tkinter library for creating the GUI
 from tkinter import messagebox  # Import messagebox for displaying pop-up messages
 import random  # Import the random library for generating random numbers
